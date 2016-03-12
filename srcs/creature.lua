@@ -68,7 +68,15 @@ function Creature:getColor() return self.color end
 
 function Creature:getAnimation() return self.animation end
 
-function Creature:setAnimation(anim) self.animation = anim end
+function Creature:setAnimation(anim)
+    self.animation = anim
+    self.width = (anim and anim:getWidth()) or self.width
+    self.height = (anim and anim:getHeight()) or self.height
+    self.shape = love.physics.newRectangleShape(self.width, self.height)
+    local data = self.fixture:getUserData()
+    self.fixture = love.physics.newFixture(self.body, self.shape, 2)
+    self.fixture:setUserData(data)
+end
 
 function Creature:update(dt)
     self.animation:update(dt)
@@ -77,7 +85,7 @@ end
 function Creature:Draw()
     if self.animation then
         love.graphics.setColor({255, 255, 255})
-        self.animation:Draw(self.body:getX() - self.animation:getWidth() / 2, self.body:getY() - self.animation:getHeight() / 2, nil, self.angle, self.orientation)
+        self.animation:Draw(self.body:getX() - self.animation:getWidth() / 2 * self.orientation.x, self.body:getY() - self.animation:getHeight() / 2 * self.orientation.y, nil, self.angle, self.orientation)
         --love.graphics.polygon("line", self.body:getWorldPoints(self.shape:getPoints()))
     else
         love.graphics.setColor(self.color)

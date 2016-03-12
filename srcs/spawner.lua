@@ -1,7 +1,7 @@
 Spawner = {}
 Spawner.__index = Spawner
 
-function Spawner.new(anim, type, x, y, delay)
+function Spawner.new(anim, type, x, y, initial, delay)
 
     local instance = {}
     setmetatable(instance, Spawner)
@@ -10,7 +10,7 @@ function Spawner.new(anim, type, x, y, delay)
     instance.y = y or 100
     instance.delay = delay or 2
     instance.lastTime = delay or 2
-    instance.now = 0
+    instance.now = delay - initial
     instance.type = type or 1
     instance.animation = anim
 

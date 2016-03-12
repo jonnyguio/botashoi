@@ -4,16 +4,16 @@ Scenary.__index = Scenary
 scenaryCounter = 0
 
 -- CONSTRUCTOR
-function Scenary.new(world, name, pos, width, height, color)
+function Scenary.new(world, mode, name, pos, width, height, color)
     if world == nil then
         return nil
     end
     local instance = {}
     setmetatable(instance, Scenary)
 
-    instance.body = love.physics.newBody(world, pos.x or 100, pos.y or 100, "static")
+    instance.body = love.physics.newBody(world, pos.x or 100, pos.y or 100, mode or "static")
     instance.shape = love.physics.newRectangleShape(width or 10, height or 10)
-    instance.fixture = love.physics.newFixture(instance.body, instance.shape)
+    instance.fixture = love.physics.newFixture(instance.body, instance.shape, 1000)
     instance.fixture:setUserData((name .. scenaryCounter) or ("scenary" .. scenaryCounter))
     scenaryCounter = scenaryCounter + 1
 

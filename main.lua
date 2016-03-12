@@ -50,12 +50,16 @@ end
 
 function love.load()
 
-    local filename_dog_standing, filename_dog_jumping = "images/dog_standing.png", "images/dog_jumping.png"
+    local filename_dog_standing, filename_dog_jumping, filename_dog_running, filename_pole = "images/dog_standing.png", "images/dog_jumping.png", "images/dog_running.png", "images/pole.png"
     local framewidth_standing, frameheight_standing = 51, 55
     local framewidth_jumping, frameheight_jumping = 71, 60
+    local framewidth_running, frameheight_running = 78, 40
+    local framewidth_holding, frameheight_holding = 46, 50
 
     animations["dog_standing"] = Animation.new("dog_standing", filename_dog_standing, framewidth_standing, frameheight_standing)
     animations["dog_jumping"] = Animation.new("dog_jumping", filename_dog_jumping, framewidth_jumping, frameheight_jumping)
+    animations["dog_running"] = Animation.new("dog_running", filename_dog_running, framewidth_running, frameheight_running)
+    animations["dog_holding"] = Animation.new("dog_holding", filename_dog_holding, framewidth_holding, frameheight_holding)
 
     for row = 1, 6 do
         animations["dog_standing"]:addFrame(row, 1)
@@ -65,8 +69,13 @@ function love.load()
         animations["dog_jumping"]:addFrame(row, 1)
     end
 
+    for row = 1, 5 do
+        animations["dog_running"]:addFrame(row, 1)
+    end
+
     animations["dog_standing"]:play()
     animations["dog_jumping"]:play()
+    animations["dog_running"]:play()
 
     min_dt = 1 / FRAMES
     next_time = love.timer.getTime()
@@ -82,17 +91,20 @@ function love.load()
     objects.creatures.enemies = {}
 
     for rnd = 1, 7 do
-        randoms[rnd] = math.random(1, 10)
-        print(randoms[rnd])
+        randoms[rnd] = math.random(1, 3)
     end
 
-    table.insert(objects.spawners, Spawner.new(animations["dog_standing"], 1, 60, love.graphics.getHeight() - 25, 5))
-    table.insert(objects.spawners, Spawner.new(animations["dog_standing"], 2, 140, love.graphics.getHeight() - 25, 13))
+    table.insert(objects.spawners, Spawner.new(animations["dog_running"], 1, 60, love.graphics.getHeight() - animations["dog_running"]:getHeight(), 1, 5))
+    table.insert(objects.spawners, Spawner.new(animations["dog_running"], 2, 140, love.graphics.getHeight() - 25, 10, 13))
 
-    pole = Pole.new(world, love.graphics.getWidth() - 100, love.graphics.getHeight() / 2)
-    floor = Scenary.new(world, "floor", {x=love.graphics.getWidth() / 2, y=love.graphics.getHeight()}, love.graphics.getWidth(), 50)
-    table.insert(objects.scenary, floor)
+    pole = Pole.new(world, filename_pole, love.graphics.getWidth() - 100, love.graphics.getHeight() / 2)
     objects.pole = pole
+
+    floor = Scenary.new(world, "dynamic", "floor", {x=love.graphics.getWidth() / 2, y=love.graphics.getHeight()}, love.graphics.getWidth(), 50)
+    realFloor = Scenary.new(world, nil, "realFloor", {x=love.graphics.getWidth() / 2, y=love.graphics.getHeight() + 50}, love.graphics.getWidth(), 50)
+    table.insert(objects.scenary, floor)
+    table.insert(objects.scenary, realFloor)
+
     teamX = pole:getPos() - 10 - animations["dog_standing"]:getWidth()
     teamY = love.graphics.getHeight() - 25 - animations["dog_standing"]:getHeight()
 
@@ -143,10 +155,8 @@ function love.draw()
     for k, v in pairs(animations) do
         if k == "dog_standing" then
             for i = 1, 7 do
-                v:Draw(teamX - i * 8, teamY, randoms[i])
+                v:Draw(teamX - i * 8, teamY - randoms[i], randoms[i])
             end
-        elseif k == "dog_jumping" then
-            v:Draw()
         end
     end
 

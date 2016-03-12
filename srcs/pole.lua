@@ -1,4 +1,4 @@
-local Pole = {}
+Pole = {}
 Pole.__index = Pole
 
 -- CONSTRUCTOR
@@ -6,17 +6,18 @@ function Pole.new(world, x, y, angle, width, height, color)
     if world == nil then
         return nil
     end
-    local ple = {}
-    setmetatable(ple, Pole)
+    local instance = {}
+    setmetatable(instance, Pole)
 
-    ple.body = love.physics.newBody(world, (x or love.graphics.getWidth() / 2), (y or love.graphics.getHeight() / 2), "dynamic")
-    ple.shape = love.physics.newRectangleShape(width or 20, height or 300)
-    ple.fixture = love.physics.newFixture(ple.body, ple.shape, 50)
-    --ple.pos = pos or {x = love.graphics.getWidth() / 2, y = love.graphics.getHeight() / 2}
+    instance.body = love.physics.newBody(world, (x or love.graphics.getWidth() / 2), (y or love.graphics.getHeight() / 2), "dynamic")
+    instance.shape = love.physics.newRectangleShape(width or 20, height or 300)
+    instance.fixture = love.physics.newFixture(instance.body, instance.shape, 15)
+    instance.fixture:setUserData("pole")
+    --instance.pos = pos or {x = love.graphics.getWidth() / 2, y = love.graphics.getHeight() / 2}
 
-    ple.angle = angle or 90
-    ple.color = color or {math.random(0,255), math.random(0,255), math.random(0,255)}
-    return ple
+    instance.angle = angle or 90
+    instance.color = color or {math.random(0,255), math.random(0,255), math.random(0,255)}
+    return instance
 end
 
 -- GETTERS/SETTERS

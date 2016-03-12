@@ -1,35 +1,63 @@
-local Creature = {}
+Creature = {}
 Creature.__index = Creature
+Creature.__gc = function(self)
+    for i, x in pairs(objects.creatures) do
+        for j, y in pairs(x) do
+            if y:getFixture():getUserData() == self.fixture:getUserData() then
+                print(y:getFixture():getUserData(), self.fixture:getUserData())
+                table.remove(x, j)
+            end
+        end
+    end
+    self.fixture:destroy()
+    --self.shape:destroy()
+    self.body:destroy()
+end
 
--- CONSTRUCTOR
-function Creature.new(world, x, y, radius, width, height, color)
+creatureCounter = 0
+
+-- CONSTRUCTOR/DESTRUCTOR
+function Creature.new(world, name, x, y, radius, width, height, color)
     if world == nil then
         return nil
     end
-    local cre = {}
-    setmetatable(cre, Creature)
+    local instance = {}
+    setmetatable(instance, Creature)
 
-    cre.body = love.physics.newBody(world, x or 100, y or 100, "dynamic")
+    instance.body = love.physics.newBody(world, x or 100, y or 100, "dynamic")
     if radius ~= nil and radius > 0 then
-        cre.shape = love.physics.newCircleShape(radius)
+        instance.shape = love.physics.newCircleShape(radius)
     else
-        cre.shape = love.physics.newRectangleShape(width or 10, height or 10)
+        instance.shape = love.physics.newRectangleShape(width or 10, height or 10)
     end
-    cre.fixture = love.physics.newFixture(cre.body, cre.shape, 2)
+    instance.fixture = love.physics.newFixture(instance.body, instance.shape, 2)
+    instance.fixture:setUserData((name .. creatureCounter) or ("creature" .. creatureCounter))
+    creatureCounter = creatureCounter + 1
 
-    cre.color = color or {math.random(0,255), math.random(0,255), math.random(0,255)}
+    instance.color = color or {math.random(0,255), math.random(0,255), math.random(0,255)}
 
-    return cre
+    return instance
+end
+
+function Creature:destroy()
 end
 
 --GETTER/SETTERS
-function Creature:setBody(pos) self. body = body end
+function Creature:setName(name) self.name = name end
+
+function Creature:getName() return self.name end
+
+function Creature:setBody(pos) self.body = body end
 
 function Creature:getBody() return self.body end
 
 function Creature:setShape(shape) self.shape = shape end
 
 function Creature:getShape() return self.shape end
+
+function Creature:setFixture(fixture) self.fixture = fixture end
+
+function Creature:getFixture() return self.fixture end
 
 function Creature:setColor(color) self.color = color end
 

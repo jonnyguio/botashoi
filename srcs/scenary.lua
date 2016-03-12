@@ -1,21 +1,25 @@
-local Scenary = {}
+Scenary = {}
 Scenary.__index = Scenary
 
+scenaryCounter = 0
+
 -- CONSTRUCTOR
-function Scenary.new(world, pos, width, height, color)
+function Scenary.new(world, name, pos, width, height, color)
     if world == nil then
         return nil
     end
-    local sce = {}
-    setmetatable(sce, Scenary)
+    local instance = {}
+    setmetatable(instance, Scenary)
 
-    sce.body = love.physics.newBody(world, pos.x or 100, pos.y or 100, "static")
-    sce.shape = love.physics.newRectangleShape(width or 10, height or 10)
-    sce.fixture = love.physics.newFixture(sce.body, sce.shape)
+    instance.body = love.physics.newBody(world, pos.x or 100, pos.y or 100, "static")
+    instance.shape = love.physics.newRectangleShape(width or 10, height or 10)
+    instance.fixture = love.physics.newFixture(instance.body, instance.shape)
+    instance.fixture:setUserData((name .. scenaryCounter) or ("scenary" .. scenaryCounter))
+    scenaryCounter = scenaryCounter + 1
 
-    sce.color = color or {math.random(0,255), math.random(0,255), math.random(0,255)}
+    instance.color = color or {math.random(0,255), math.random(0,255), math.random(0,255)}
 
-    return sce
+    return instance
 end
 
 --GETTER/SETTERS
@@ -26,6 +30,10 @@ function Scenary:getBody() return self.body end
 function Scenary:setShape(shape) self.shape = shape end
 
 function Scenary:getShape() return self.shape end
+
+function Scenary:setFixture(fixture) self.fixture = fixture end
+
+function Scenary:getFixture() return self.fixture end
 
 function Scenary:setColor(color) self.color = color end
 

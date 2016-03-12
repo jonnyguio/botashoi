@@ -4,7 +4,6 @@ Creature.__gc = function(self)
     for i, x in pairs(objects.creatures) do
         for j, y in pairs(x) do
             if y:getFixture():getUserData() == self.fixture:getUserData() then
-                print(y:getFixture():getUserData(), self.fixture:getUserData())
                 table.remove(x, j)
             end
         end
@@ -17,7 +16,7 @@ end
 creatureCounter = 0
 
 -- CONSTRUCTOR/DESTRUCTOR
-function Creature.new(world, name, x, y, radius, width, height, color)
+function Creature.new(world, anim, name, x, y, orientation, angle, radius, width, height, color)
     if world == nil then
         return nil
     end
@@ -28,13 +27,17 @@ function Creature.new(world, name, x, y, radius, width, height, color)
     if radius ~= nil and radius > 0 then
         instance.shape = love.physics.newCircleShape(radius)
     else
-        instance.shape = love.physics.newRectangleShape(width or 10, height or 10)
+        instance.shape = love.physics.newRectangleShape((anim and anim:getWidth()) or width or 10, (anim and anim:getHeight()) or height or 10)
     end
     instance.fixture = love.physics.newFixture(instance.body, instance.shape, 2)
     instance.fixture:setUserData((name .. creatureCounter) or ("creature" .. creatureCounter))
     creatureCounter = creatureCounter + 1
 
     instance.color = color or {math.random(0,255), math.random(0,255), math.random(0,255)}
+    instance.animation = deepCopy(anim)
+
+    instance.angle = angle or 0
+    instance.orientation = orientation or {x = 1, y = 1}
 
     return instance
 end
@@ -63,12 +66,26 @@ function Creature:setColor(color) self.color = color end
 
 function Creature:getColor() return self.color end
 
+function Creature:getAnimation() return self.animation end
+
+function Creature:setAnimation(anim) self.animation = anim end
+
+function Creature:update(dt)
+    self.animation:update(dt)
+end
+
 function Creature:Draw()
-    love.graphics.setColor(self.color)
-    if self.shape:type() == "CircleShape" then
-        love.graphics.circle("fill", self.body:getX(), self.body:getY(), self.shape:getRadius())
+    if self.animation then
+        love.graphics.setColor({255, 255, 255})
+        self.animation:Draw(self.body:getX() - self.animation:getWidth() / 2, self.body:getY() - self.animation:getHeight() / 2, nil, self.angle, self.orientation)
+        --love.graphics.polygon("line", self.body:getWorldPoints(self.shape:getPoints()))
     else
-        love.graphics.polygon("fill", self.body:getWorldPoints(self.shape:getPoints()))
+        love.graphics.setColor(self.color)
+        if self.shape:type() == "CircleShape" then
+            love.graphics.circle("fill", self.body:getX(), self.body:getY(), self.shape:getRadius())
+        else
+            love.graphics.polygon("fill", self.body:getWorldPoints(self.shape:getPoints()))
+        end
     end
 end
 

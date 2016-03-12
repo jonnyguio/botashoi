@@ -6,12 +6,12 @@ Enemy.__index = Enemy
 
 enemyCounter = 0
 
-function Enemy.new(world, type, x, y, radius, width, height, color)
+function Enemy.new(world, anim, type, x, y, orientation, angle, radius, width, height, color)
     local instance = {}
     setmetatable(instance, Enemy)
 
-    instance.width = width or (radius and radius * 2) or 20
-    instance.height = height or (radius and radius * 2) or 20
+    instance.width = (anim and anim:getWidth()) or width or (radius and radius * 2) or 20
+    instance.height = (anim and anim:getHeight()) or height or (radius and radius * 2) or 20
     instance.radius = radius or 10
     instance.body = love.physics.newBody(world, x or 100, y or 100, "dynamic")
     if radius ~= nil and radius > 0 then
@@ -30,6 +30,10 @@ function Enemy.new(world, type, x, y, radius, width, height, color)
     instance.attacked = false
     instance.type = type or 1
     instance.disappearTime = 10
+    instance.animation = deepCopy(anim)
+    instance.animation:play()
+    instance.angle = angle or 0
+    instance.orientation = orientation or {x = 1, y = -1}
 
     return instance
 end
@@ -42,21 +46,22 @@ end
 
 function Enemy:update(dt)
     self.now = self.now + dt
-    if self.type == 1 then
-        if self.lastTime - self.now <= 0 and self.attacked == false then
-            self.body:applyForce(1500 * self.fixture:getDensity() * (self.width / 4), -700 * self.fixture:getDensity() * self.width / 4)
+    self.animation:update(dt)
+
+    if self.lastTime - self.now <= 0 and self.attacked == false then
+        self.animation = deepCopy(animations["dog_jumping"])
+        if self.type == 1 then
+            self.body:applyForce(1000 * (self.width / 4), -800 * self.fixture:getDensity() * self.width / 2)
+            self.attacked = true
+        elseif self.type == 2 then
+            self.body:applyForce(1000 * (self.width / 4), -1000 * self.fixture:getDensity() * self.width / 2)
+            self.attacked = true
+        elseif self.type == 3 then
+            self.body:applyForce(1000 * (self.width / 4), -1500 * self.fixture:getDensity() * self.width / 2)
             self.attacked = true
         end
-    elseif self.type == 2 then
-        if self.lastTime - self.now <= 0 and self.attacked == false then
-            self.body:applyForce(1500 * self.fixture:getDensity() * (self.width / 4), -900 * self.fixture:getDensity() * self.width / 4)
-            self.attacked = true
-        end
-    elseif self.type == 3 then
-        if self.lastTime - self.now <= 0 and self.attacked == false then
-            self.body:applyForce(1500 * self.fixture:getDensity() * (self.width / 4), -1400 * self.fixture:getDensity() * self.width / 4)
-            self.attacked = true
-        end
+    else
+        self.body:applyForce(700, 0)
     end
     if self.disappearTime - self.now <= 0 then
         self:destroy()

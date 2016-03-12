@@ -3,11 +3,33 @@ Scenary = require "srcs.scenary"
 Creature = require "srcs.creature"
 Spawner = require "srcs.spawner"
 Enemy = require "srcs.enemy"
+Animation = require "srcs.animation"
+
+function deepCopy(object)
+    local lookup_table = {}
+    local function _copy(object)
+        if type(object) ~= "table" then
+            return object
+        elseif lookup_table[object] then
+            return lookup_table[object]
+        end
+        local new_table = {}
+        lookup_table[object] = new_table
+        for index, value in pairs(object) do
+            new_table[_copy(index)] = _copy(value)
+        end
+        return setmetatable(new_table, getmetatable(object))
+    end
+    return _copy(object)
+end
 
 local FRAMES = 60
 local canJump = true
 
 objects = {}
+imgs = {}
+animations = {}
+randoms = {}
 
 function beginContact(a, b, coll)
     if string.match(a:getUserData(), "team") and string.match(b:getUserData(), "floor") then
@@ -26,14 +48,31 @@ end
 function postSolve(a, b, coll, normalimpulse, tangentimpulse)
 end
 
-
 function love.load()
+
+    local filename_dog_standing, filename_dog_jumping = "images/dog_standing.png", "images/dog_jumping.png"
+    local framewidth_standing, frameheight_standing = 51, 55
+    local framewidth_jumping, frameheight_jumping = 71, 60
+
+    animations["dog_standing"] = Animation.new("dog_standing", filename_dog_standing, framewidth_standing, frameheight_standing)
+    animations["dog_jumping"] = Animation.new("dog_jumping", filename_dog_jumping, framewidth_jumping, frameheight_jumping)
+
+    for row = 1, 6 do
+        animations["dog_standing"]:addFrame(row, 1)
+    end
+
+    for row = 1, 4 do
+        animations["dog_jumping"]:addFrame(row, 1)
+    end
+
+    animations["dog_standing"]:play()
+    animations["dog_jumping"]:play()
 
     min_dt = 1 / FRAMES
     next_time = love.timer.getTime()
 
-    love.physics.setMeter(64)
-    world = love.physics.newWorld(0, 9.81*64, true)
+    love.physics.setMeter(50)
+    world = love.physics.newWorld(0, 9.81 * 50, true)
     world:setCallbacks(beginContact, endContact, preSolve, postSolve)
 
     objects.spawners = {}
@@ -42,22 +81,20 @@ function love.load()
     objects.creatures.team = {}
     objects.creatures.enemies = {}
 
-    table.insert(objects.spawners, Spawner.new(1, 60, love.graphics.getHeight() - 100, 5))
-    table.insert(objects.spawners, Spawner.new(2, 140, love.graphics.getHeight() - 100, 13))
+    for rnd = 1, 7 do
+        randoms[rnd] = math.random(1, 10)
+        print(randoms[rnd])
+    end
+
+    table.insert(objects.spawners, Spawner.new(animations["dog_standing"], 1, 60, love.graphics.getHeight() - 25, 5))
+    table.insert(objects.spawners, Spawner.new(animations["dog_standing"], 2, 140, love.graphics.getHeight() - 25, 13))
 
     pole = Pole.new(world, love.graphics.getWidth() - 100, love.graphics.getHeight() / 2)
     floor = Scenary.new(world, "floor", {x=love.graphics.getWidth() / 2, y=love.graphics.getHeight()}, love.graphics.getWidth(), 50)
     table.insert(objects.scenary, floor)
     objects.pole = pole
-
-    --[[print(pole:getBody():getPosition())
-    print("gravity: " .. pole:getBody():getGravityScale())
-    print(pole:getAngle())
-    print(pole:getWidth())
-    print(pole:getHeight())
-    print(pole:getColor()[1])
-    print(pole:getColor()[2])
-    print(pole:getColor()[3])]]--
+    teamX = pole:getPos() - 10 - animations["dog_standing"]:getWidth()
+    teamY = love.graphics.getHeight() - 25 - animations["dog_standing"]:getHeight()
 
     love.graphics.setBackgroundColor(104, 136, 248) --set the background color to a nice blue
     love.window.setMode(800, 600)
@@ -70,22 +107,28 @@ function love.update(dt)
         v:update(min_dt)
     end
 
-    for k, v in pairs(objects.creatures.enemies) do
+    for i, j in pairs(objects.creatures) do
+        for k, v in pairs(j) do
+            v:update(min_dt)
+        end
+    end
+
+    for k, v in pairs(animations) do
         v:update(min_dt)
     end
 
     world:update(dt)
 
     --[[if love.keyboard.isDown("right") then --press the right arrow key to push the ball to the right
-        for k, v in pairs(objects.creatures) do
+        for k, v in ipairs(objects.creatures) do
             v:getBody():applyForce(400, 0)
         end
     elseif love.keyboard.isDown("left") then --press the left arrow key to push the ball to the left
-        for k, v in pairs(objects.creatures) do
+        for k, v in ipairs(objects.creatures) do
             v:getBody():applyForce(-400, 0)
         end
     elseif love.keyboard.isDown("r") then --press the up arrow key to set the ball in the air
-        for k, v in pairs(objects.creatures) do
+        for k, v in ipairs(objects.creatures) do
             v:getBody():setPosition(650/2, 650/2)
             v:getBody():setLinearVelocity(0, 0)
         end
@@ -96,13 +139,26 @@ function love.draw()
     for k, v in pairs(objects.scenary) do
         v:Draw()
     end
+
+    for k, v in pairs(animations) do
+        if k == "dog_standing" then
+            for i = 1, 7 do
+                v:Draw(teamX - i * 8, teamY, randoms[i])
+            end
+        elseif k == "dog_jumping" then
+            v:Draw()
+        end
+    end
+
     for k, v in pairs(objects.creatures) do
         for x, y in pairs(v) do
             y:Draw()
         end
     end
 
+
     objects.pole:Draw()
+    love.graphics.print("Frame Rate: "..love.timer.getFPS(), 0, 0)
 
     local cur_time = love.timer.getTime()
     if next_time <= cur_time then
@@ -117,13 +173,13 @@ function love.keypressed(key)
     if key == "up" then
         if canJump == true then
             canJump = false
-            for k, v in pairs(objects.creatures.team) do
+            for k, v in ipairs(objects.creatures.team) do
                 v:getBody():applyForce(0, -20000)
             end
         end
     elseif key == "k" then
         local x, y = objects.pole:getBody():getPosition()
-        local team = Creature.new(world, "team", x - math.random(30, 60), love.graphics.getWidth() / 2, 20)
+        local team = Creature.new(world, animations["dog_standing"], "team", x - math.random(30, 60), teamY + animations["dog_standing"]:getHeight())
         table.insert(objects.creatures.team, team)
     end
 end

@@ -4,15 +4,21 @@ Scenary.__index = Scenary
 scenaryCounter = 0
 
 -- CONSTRUCTOR
-function Scenary.new(world, mode, name, pos, width, height, color)
+function Scenary.new(world, mode, img, name, pos, width, height, color)
     if world == nil then
         return nil
     end
     local instance = {}
     setmetatable(instance, Scenary)
 
+    if type(img) == "string" then
+        instance.img = love.graphics.newImage(img)
+    else
+        instance.img = img
+    end
+
     instance.body = love.physics.newBody(world, pos.x or 100, pos.y or 100, mode or "static")
-    instance.shape = love.physics.newRectangleShape(width or 10, height or 10)
+    instance.shape = love.physics.newRectangleShape((instance.img and instance.img:getWidth()) or width or 10, (instance.img and instance.img:getHeight()) or height or 10)
     instance.fixture = love.physics.newFixture(instance.body, instance.shape, 1000)
     instance.fixture:setUserData((name .. scenaryCounter) or ("scenary" .. scenaryCounter))
     scenaryCounter = scenaryCounter + 1
@@ -41,6 +47,7 @@ function Scenary:getColor() return self.color end
 
 function Scenary:Draw()
     love.graphics.setColor(self.color)
+    love.graphics.draw(self.img, self.body:getX(), self.body:getY(), self.body:getAngle(), 1, 1, self.img:getWidth() / 2, self.img:getHeight() / 2)
     love.graphics.polygon("fill", self.body:getWorldPoints(self.shape:getPoints()))
 end
 

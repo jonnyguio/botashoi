@@ -85,8 +85,8 @@ end
 function Creature:Draw()
     if self.animation then
         love.graphics.setColor({255, 255, 255})
-        self.animation:Draw(self.body:getX() - self.animation:getWidth() / 2 * self.orientation.x, self.body:getY() - self.animation:getHeight() / 2 * self.orientation.y, nil, self.angle, self.orientation)
-        --love.graphics.polygon("line", self.body:getWorldPoints(self.shape:getPoints()))
+        self.animation:Draw(self.body:getX(), self.body:getY(), 0, self.angle, self.orientation)
+        love.graphics.polygon("line", self.body:getWorldPoints(self.shape:getPoints()))
     else
         love.graphics.setColor(self.color)
         if self.shape:type() == "CircleShape" then

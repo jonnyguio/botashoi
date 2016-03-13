@@ -16,8 +16,8 @@ function Pole.new(world, img, x, y, width, height, color)
     end
 
     instance.body = love.physics.newBody(world, (x or love.graphics.getWidth() / 2), (y or love.graphics.getHeight() / 2), "dynamic")
-    instance.shape = love.physics.newRectangleShape(width or 20, height or 300)
-    instance.fixture = love.physics.newFixture(instance.body, instance.shape, 105)
+    instance.shape = love.physics.newRectangleShape((instance.img and instance.img:getWidth()) or width or 20, (instance.img and instance.img:getHeight()) or height or 300)
+    instance.fixture = love.physics.newFixture(instance.body, instance.shape, 50)
     instance.fixture:setUserData("pole")
     --instance.pos = pos or {x = love.graphics.getWidth() / 2, y = love.graphics.getHeight() / 2}
 
@@ -40,10 +40,12 @@ function Pole:getColor() return self.color end
 
 function Pole:getPos() return self.body:getPosition() end
 
+function Pole:getImg() return self.img end
+
 --FUNCTIONS
 function Pole:Draw(x, y)
     love.graphics.setColor(self.color)
-    love.graphics.draw(self.img, self.body:getX() - self.img:getWidth() / 2, self.body:getY(), self.body:getAngle())
+    love.graphics.draw(self.img, self.body:getX(), self.body:getY(), self.body:getAngle(), 1, 1, self.img:getWidth() / 2, self.img:getHeight() / 2)
     love.graphics.polygon("line", self.body:getWorldPoints(self.shape:getPoints()))
 end
 

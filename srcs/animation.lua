@@ -29,11 +29,11 @@ function Animation.new(name, img, w, h, x, y)
   return instance
 end
 
-function Animation:Draw(x, y, drawingVarious, angle, orientation)
+function Animation:Draw(x, y, drawingVarious, angle, orientation, w, h)
     local quad = self.frames[(self.currentFrame + (drawingVarious or 0)) % #self.frames + 1]
     if quad then
         love.graphics.setColor({255, 255, 255})
-        love.graphics.draw(self.img, quad, x or self.x, y or self.y, angle, orientation and orientation.x, orientation and orientation.y)
+        love.graphics.draw(self.img, quad, x or self.x, y or self.y, angle, orientation and orientation.x, orientation and orientation.y, w or self.w / 2, h or self.h / 2)
     end
 end
 

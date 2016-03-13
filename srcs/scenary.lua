@@ -18,12 +18,16 @@ function Scenary.new(world, mode, img, name, pos, width, height, color)
     end
 
     instance.body = love.physics.newBody(world, pos.x or 100, pos.y or 100, mode or "static")
-    instance.shape = love.physics.newRectangleShape((instance.img and instance.img:getWidth()) or width or 10, (instance.img and instance.img:getHeight()) or height or 10)
+    instance.shape = love.physics.newRectangleShape(width or (instance.img and instance.img:getWidth()) or 10, height or (instance.img and instance.img:getHeight()) or 10)
     instance.fixture = love.physics.newFixture(instance.body, instance.shape, 1000)
     instance.fixture:setUserData((name .. scenaryCounter) or ("scenary" .. scenaryCounter))
     scenaryCounter = scenaryCounter + 1
 
     instance.color = color or {math.random(0,255), math.random(0,255), math.random(0,255)}
+
+    print(instance.img)
+    print(instance.img and instance.img:getWidth())
+    print(instance.img and instance.img:getHeight())
 
     return instance
 end
@@ -46,9 +50,9 @@ function Scenary:setColor(color) self.color = color end
 function Scenary:getColor() return self.color end
 
 function Scenary:Draw()
-    love.graphics.setColor(self.color)
+    love.graphics.setColor({255, 255, 255})
     love.graphics.draw(self.img, self.body:getX(), self.body:getY(), self.body:getAngle(), 1, 1, self.img:getWidth() / 2, self.img:getHeight() / 2)
-    love.graphics.polygon("fill", self.body:getWorldPoints(self.shape:getPoints()))
+    --love.graphics.polygon("fill", self.body:getWorldPoints(self.shape:getPoints()))
 end
 
 return Scenary

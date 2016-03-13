@@ -19,7 +19,7 @@ end
 
 function Spawner:update(dt)
     if self.lastTime - self.now <= 0 then
-        local enemy = Enemy.new(world, self.animation, self.type, self.x, self.y, {x = -1, y = 1})
+        local enemy = Enemy.new(world, self.animation, self.type, self.x, self.y, {x = -1, y = 1}, nil, nil, nil, nil, {40, 200, 255})
 
         table.insert(objects.creatures.enemies, enemy)
         self.lastTime = self.delay

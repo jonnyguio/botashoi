@@ -33,7 +33,7 @@ function Creature.new(world, anim, name, x, y, orientation, angle, radius, width
     instance.fixture:setUserData((name .. creatureCounter) or ("creature" .. creatureCounter))
     creatureCounter = creatureCounter + 1
 
-    instance.color = color or {math.random(0,255), math.random(0,255), math.random(0,255)}
+    instance.color = color or (instance.img and {255, 255, 255}) or {math.random(0,255), math.random(0,255), math.random(0,255)}
     instance.animation = deepCopy(anim)
 
     instance.angle = angle or 0
@@ -84,9 +84,9 @@ end
 
 function Creature:Draw()
     if self.animation then
-        love.graphics.setColor({255, 255, 255})
+        love.graphics.setColor(self.color)
         self.animation:Draw(self.body:getX(), self.body:getY(), 0, self.angle, self.orientation)
-        love.graphics.polygon("line", self.body:getWorldPoints(self.shape:getPoints()))
+        --love.graphics.polygon("line", self.body:getWorldPoints(self.shape:getPoints()))
     else
         love.graphics.setColor(self.color)
         if self.shape:type() == "CircleShape" then

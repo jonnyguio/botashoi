@@ -5,6 +5,24 @@ Spawner = require "srcs.spawner"
 Enemy = require "srcs.enemy"
 Animation = require "srcs.animation"
 
+function protect(tbl)
+    return setmetatable({}, {
+        __index = tbl,
+        __newindex = function(t, key, value)
+            error("attempting to change constant " ..
+                   tostring(key) .. " to " .. tostring(value), 2)
+        end
+    })
+end
+
+CONSTANTS = {
+    PLAYING = 1000,
+    GAME_OVER = 1001,
+    MENU = 1002
+}
+
+CONSTANTS = protect(CONSTANTS)
+
 function deepCopy(object)
     local lookup_table = {}
     local function _copy(object)
@@ -28,6 +46,7 @@ local canJump = true
 local isControlling = false
 local coolDown = 3
 local now = 3
+local state = 0
 
 objects = {}
 imgs = {}
@@ -87,11 +106,14 @@ function love.load()
     love.graphics.setBackgroundColor(104, 136, 248) --set the background color to a nice blue
     love.window.setMode(600, 480)
 
-    local filename_dog_standing, filename_dog_jumping, filename_dog_running, filename_dog_hanging, filename_pole, filename_floor = "images/dog_standing.png", "images/dog_jumping.png", "images/dog_running.png", "images/dog_hanging.png", "images/pole.png", "images/floor.png"
+    local filename_dog_standing, filename_dog_jumping, filename_dog_running, filename_dog_hanging, filename_pole, filename_floor, filename_bg = "images/dog_standing.png", "images/dog_jumping.png", "images/dog_running.png", "images/dog_hanging.png", "images/pole.png", "images/floor.png", "images/bg.png"
     local framewidth_standing, frameheight_standing = 51, 55
     local framewidth_jumping, frameheight_jumping = 71, 60
     local framewidth_running, frameheight_running = 78, 40
     local framewidth_hanging, frameheight_hanging = 43, 50
+
+    background = love.graphics.newImage(filename_bg)
+    state = CONSTANTS.PLAYING
 
     animations["dog_standing"] = Animation.new("dog_standing", filename_dog_standing, framewidth_standing, frameheight_standing)
     animations["dog_jumping"] = Animation.new("dog_jumping", filename_dog_jumping, framewidth_jumping, frameheight_jumping)
@@ -142,8 +164,8 @@ function love.load()
     pole = Pole.new(world, filename_pole, love.graphics.getWidth() - 100, love.graphics.getHeight() / 2)
     objects.pole = pole
 
-    floor = Scenary.new(world, "dynamic", filename_floor, "floor", {x = love.graphics.getWidth() / 2, y = love.graphics.getHeight()}, love.graphics.getWidth(), 50)
-    realFloor = Scenary.new(world, nil, filename_floor, "realFloor", {x = love.graphics.getWidth() / 2, y = love.graphics.getHeight() + 50}, love.graphics.getWidth(), 50)
+    floor = Scenary.new(world, "dynamic", filename_floor, "floor", {x = love.graphics.getWidth() / 2, y = love.graphics.getHeight()}, love.graphics.getWidth(), 40)
+    realFloor = Scenary.new(world, nil, filename_floor, "realFloor", {x = love.graphics.getWidth() / 2, y = love.graphics.getHeight() + 50}, love.graphics.getWidth() * 3, 70)
     table.insert(objects.scenary, floor)
     table.insert(objects.scenary, realFloor)
 
@@ -152,87 +174,104 @@ function love.load()
 end
 
 function love.update(dt)
-    next_time = next_time + min_dt
-    now = now + min_dt
+    if state == CONSTANTS.PLAYING then
+        next_time = next_time + min_dt
+        now = now + min_dt
 
-    for k, v in pairs(objects.spawners) do
-        v:update(min_dt)
-    end
+        if math.abs(objects.pole:getBody():getAngle()) > math.pi / 3 then
+            state = CONSTANTS.GAME_OVER
+        end
 
-    for i, j in pairs(objects.creatures) do
-        for k, v in pairs(j) do
+        for k, v in pairs(objects.spawners) do
             v:update(min_dt)
         end
-    end
 
-    for k, v in pairs(hangings) do
-        v.x = objects.pole:getBody():getX() - objects.pole:getImg():getWidth() / 2
-        v.y = objects.pole:getBody():getY() --- v.offset
-    end
-
-    for k, v in pairs(animations) do
-        v:update(min_dt)
-    end
-
-    world:update(dt)
-
-    if love.keyboard.isDown("right") then --press the right arrow key to push the ball to the right
-        isControlling = controlOne(now, coolDown, isControlling)
-        for k, v in pairs(objects.creatures.team) do
-            v:getBody():applyForce(v:getBody():getMass() * 4, 0)
+        for i, j in pairs(objects.creatures) do
+            for k, v in pairs(j) do
+                v:update(min_dt)
+            end
         end
-    elseif love.keyboard.isDown("left") then --press the left arrow key to push the ball to the left
-        isControlling = controlOne(now, coolDown, isControlling)
-        for k, v in pairs(objects.creatures.team) do
-            v:getBody():applyForce(v:getBody():getMass() * -4, 0)
+
+        for k, v in pairs(hangings) do
+            v.x = objects.pole:getBody():getX() - objects.pole:getImg():getWidth() / 2
+            v.y = objects.pole:getBody():getY() --- v.offset
         end
-    elseif love.keyboard.isDown("up") and canJump then
-        isControlling = controlOne(now, coolDown, isControlling)
-        for k, v in pairs(objects.creatures.team) do
-            v:getBody():applyForce(0, v:getBody():getMass() * -500)
+
+        for k, v in pairs(animations) do
+            v:update(min_dt)
         end
-    elseif love.keyboard.isDown("r") then --press the up arrow key to set the ball in the air
-        for k, v in ipairs(objects.creatures) do
-            v:getBody():setPosition(650/2, 650/2)
-            v:getBody():setLinearVelocity(0, 0)
+
+        world:update(dt)
+
+        if love.keyboard.isDown("right") then --press the right arrow key to push the ball to the right
+            isControlling = controlOne(now, coolDown, isControlling)
+            for k, v in pairs(objects.creatures.team) do
+                v:getBody():applyForce(v:getBody():getMass() * 4, 0)
+            end
+        elseif love.keyboard.isDown("left") then --press the left arrow key to push the ball to the left
+            isControlling = controlOne(now, coolDown, isControlling)
+            for k, v in pairs(objects.creatures.team) do
+                v:getBody():applyForce(v:getBody():getMass() * -4, 0)
+            end
+        elseif love.keyboard.isDown("up") and canJump then
+            isControlling = controlOne(now, coolDown, isControlling)
+            for k, v in pairs(objects.creatures.team) do
+                v:getBody():applyForce(0, v:getBody():getMass() * -500)
+            end
+        elseif love.keyboard.isDown("r") then --press the up arrow key to set the ball in the air
+            for k, v in ipairs(objects.creatures) do
+                v:getBody():setPosition(650/2, 650/2)
+                v:getBody():setLinearVelocity(0, 0)
+            end
         end
     end
 end
 
 function love.draw()
-    for k, v in pairs(objects.scenary) do
-        v:Draw()
-    end
+    if state == CONSTANTS.PLAYING then
+        love.graphics.setColor({255, 255, 255})
+        love.graphics.draw(background, 0, 0)
 
-    objects.pole:Draw()
+        for k, v in pairs(objects.scenary) do
+            v:Draw()
+        end
 
-    for k, v in pairs(animations) do
-        if k == "dog_standing" then
-            for i = 1, 7 do
-                v:Draw(teamX - i * 8, teamY - randoms[i], randoms[i])
-            end
-        elseif k == "dog_hanging" then
-            for i = 1, #hangings do
-                v:Draw(hangings[i].x, hangings[i].y, nil, objects.pole:getBody():getAngle(), nil, nil, hangings[i].offset)
+        objects.pole:Draw()
+
+        for k, v in pairs(animations) do
+            if k == "dog_standing" then
+                for i = 1, 7 do
+                    love.graphics.setColor({255, 255, 255})
+                    v:Draw(teamX - i * 8, teamY - randoms[i], randoms[i])
+                end
+            elseif k == "dog_hanging" then
+                for i = 1, #hangings do
+                    love.graphics.setColor({0, 100, 200})
+                    v:Draw(hangings[i].x, hangings[i].y, nil, objects.pole:getBody():getAngle(), nil, nil, hangings[i].offset)
+                end
             end
         end
-    end
 
-    for k, v in pairs(objects.creatures) do
-        for x, y in pairs(v) do
-            y:Draw()
+        for k, v in pairs(objects.creatures) do
+            for x, y in pairs(v) do
+                y:Draw()
+            end
         end
+
+
+        love.graphics.print("Frame Rate: "..love.timer.getFPS(), 0, 0)
+
+        local cur_time = love.timer.getTime()
+        if next_time <= cur_time then
+            next_time = cur_time
+            return
+        end
+        love.timer.sleep(next_time - cur_time)
+    elseif state == CONSTANTS.GAME_OVER then
+        love.graphics.setColor({255, 255, 255})
+        love.graphics.draw(background, 0, 0)
+        love.graphics.print("Perdeu, infelizmente. Continue tentando!", love.graphics.getWidth() / 2, love.graphics.getHeight() / 2)
     end
-
-
-    love.graphics.print("Frame Rate: "..love.timer.getFPS(), 0, 0)
-
-    local cur_time = love.timer.getTime()
-    if next_time <= cur_time then
-        next_time = cur_time
-        return
-    end
-    love.timer.sleep(next_time - cur_time)
 end
 
 

@@ -52,19 +52,19 @@ function Enemy:update(dt)
     if self.lastTime - self.now <= 0 and self.attacked == false then
         self:setAnimation(deepCopy(animations["dog_jumping"]))
         if self.type == 1 then
-            self.body:applyForce(self.body:getMass() * 100, -self.body:getMass() * 25000)
+            self.body:applyForce(self.body:getMass() * 300, -self.body:getMass() * 25000)
             self.attacked = true
         elseif self.type == 2 then
             self.body:setLinearVelocity(x + 3, 6)
-            self.body:applyForce(self.body:getMass() * 100, -self.body:getMass() * 33333)
+            self.body:applyForce(self.body:getMass() * 300, -self.body:getMass() * 33333)
             self.attacked = true
         elseif self.type == 3 then
             self.body:setLinearVelocity(x + 3, 7)
-            self.body:applyForce(self.body:getMass() * 100, -self.body:getMass() * 50000)
+            self.body:applyForce(self.body:getMass() * 300, -self.body:getMass() * 50000)
             self.attacked = true
         end
     elseif self.attacked == false then
-        self.body:applyForce(self.body:getMass() * 333, 0)
+        self.body:applyForce(self.body:getMass() * 250, 0)
     end
     if self.disappearTime - self.now <= 0 then
         self:destroy()

@@ -68,10 +68,6 @@ function Animation:getWidth() return self.w end
 function Animation:getHeight() return self.h end
 
 function Animation:addFrame(col, row)
-    --[[print (self.w)
-    print (self.h)
-    print (self.img:getWidth())
-    print (self.img:getHeight())]]--
     local quad = love.graphics.newQuad((col - 1) * self.w, (row - 1) * self.h, self.w, self.h, self.img:getWidth(), self.img:getHeight())
     self.frames[#self.frames + 1] = quad
     return self

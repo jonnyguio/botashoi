@@ -58,7 +58,7 @@ function Enemy:update(dt)
     local x, y = self.body:getLinearVelocity()
 
     if self.lastTime - self.now <= 0 and self.attacked == false then
-        self:setAnimation(deepCopy(animations["dog_jumping"]))
+        self:setAnimation(deepCopy(animations["dog_jumping_blue"]))
         if self.type == 1 then
             self.body:applyForce(self.body:getMass() * 300, -self.body:getMass() * 25000)
             self.attacked = true

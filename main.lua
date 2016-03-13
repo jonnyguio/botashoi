@@ -23,11 +23,11 @@ CONSTANTS = {
     TIME_TO_LOAD = 2.5,
     ENEMY = 12,
     ENEMY_DEAD = -11,
-    POLE = -10
+    POLE = -10,
+    POLE_DENSITY = 50
 }
 
 CONSTANTS = protect(CONSTANTS)
-
 
 local FRAMES = 60
 local canJump = true
@@ -44,6 +44,10 @@ animations = {}
 randoms = {}
 hangings = {}
 buttons = {}
+
+function isInRange(a, b, size)
+    return (b >= a - size and b <= a + size) or (a >= b - size and a <= b + size)
+end
 
 function isClose(a, b)
     local c = 10
@@ -114,9 +118,12 @@ function beginContact(a, b, coll)
                 end
             end
             for i, j in pairs(objects.creatures.enemies) do
-                if a:getUserData() == j:getFixture():getUserData() and j:isAlive() then
-                    table.insert(hangings, {x = objects.pole:getBody():getX() - objects.pole:getImg():getWidth() / 2, y = objects.pole:getBody():getY(), offset = objects.pole:getBody():getY()})
+                if a:getUserData() == j:getFixture():getUserData() then
+                    if j:isAlive() then
+                        table.insert(hangings, {x = objects.pole:getBody():getX() - objects.pole:getImg():getWidth() / 2, y = objects.pole:getBody():getY(), offset = objects.pole:getBody():getY()})
+                    end
                     j:destroy()
+
                 end
             end
         elseif string.match(b:getUserData(), "team") then
@@ -136,7 +143,11 @@ function beginContact(a, b, coll)
                         v:getFixture():setMask(CONSTANTS.ENEMY)
                         v:getFixture():setCategory(CONSTANTS.ENEMY)
                         v:getFixture():setGroupIndex(CONSTANTS.ENEMY_DEAD)
-                        v:prepareChange("dog_falling")
+                        if v:getFixture():getUserData() == a:getUserData() then
+                            v:prepareChange("dog_falling_blue")
+                        else
+                            v:prepareChange("dog_falling")
+                        end
                         addScore(1)
                         v:kill()
                     end
@@ -152,8 +163,10 @@ function beginContact(a, b, coll)
     elseif string.match(b:getUserData(), "enemy") then
         if string.match(a:getUserData(), "pole") then
             for i, j in pairs(objects.creatures.enemies) do
-                if b:getUserData() == j:getFixture():getUserData() and j:isAlive() then
-                    table.insert(hangings, {x = objects.pole:getBody():getX() - objects.pole:getImg():getWidth() / 2, y = objects.pole:getBody():getY(), offset = objects.pole:getBody():getY() - j:getBody():getY()})
+                if b:getUserData() == j:getFixture():getUserData() then
+                    if j:isAlive() then
+                        table.insert(hangings, {x = objects.pole:getBody():getX() - objects.pole:getImg():getWidth() / 2, y = objects.pole:getBody():getY(), offset = objects.pole:getBody():getY() - j:getBody():getY()})
+                    end
                     --pole:getBody():setMass objects.pole:getBody():getMass() - 5)
                     j:destroy()
                 end
@@ -176,7 +189,11 @@ function beginContact(a, b, coll)
                         v:getFixture():setMask(CONSTANTS.ENEMY)
                         v:getFixture():setCategory(CONSTANTS.ENEMY)
                         v:getFixture():setGroupIndex(CONSTANTS.ENEMY_DEAD)
-                        v:prepareChange("dog_falling")
+                        if v:getFixture():getUserData() == b:getUserData() then
+                            v:prepareChange("dog_falling_blue")
+                        else
+                            v:prepareChange("dog_falling")
+                        end
                         addScore(1)
                         v:kill()
                     end
@@ -210,7 +227,8 @@ function love.load()
     love.graphics.setBackgroundColor(0, 0, 0) -- BURAKIRU
     love.window.setMode(600, 480)
 
-    local filename_dog_standing, filename_dog_jumping, filename_dog_running, filename_dog_hanging, filename_pole, filename_floor, filename_bg, filename_dog_space_jump, filename_dog_falling, filename_logo = "images/dog_standing.png", "images/dog_jumping.png", "images/dog_running.png", "images/dog_hanging.png", "images/pole.png", "images/floor.png", "images/bg.png", "images/dog_space_jump.png", "images/dog_falling.png", "images/logo.png"
+    local filename_dog_standing, filename_dog_jumping, filename_dog_running, filename_dog_hanging, filename_dog_space_jump, filename_dog_falling = {"images/dog_standing.png", "images/dog_standing_blue.png"}, {"images/dog_jumping.png", "images/dog_jumping_blue.png"}, {"images/dog_running.png", "images/dog_running_blue.png"}, {"images/dog_hanging.png", "images/dog_hanging_blue.png"}, {"images/dog_space_jump.png", "images/dog_space_jump_blue.png"}, {"images/dog_falling.png", "images/dog_falling_blue.png"}
+    local filename_pole, filename_floor, filename_bg, filename_logo, filename_press_start, filename_quit = "images/pole.png", "images/floor.png", "images/bg.png", "images/logo.png", "images/press_start.png", "images/quit.png"
     local fw_standing, fh_standing = 51, 55
     local fw_jumping, fh_jumping = 71, 60
     local fw_running, fh_running = 78, 40
@@ -232,38 +250,54 @@ function love.load()
     world:setCallbacks(beginContact, endContact, preSolve, postSolve)
 
     -- Creating animations
-    animations["dog_standing"] = Animation.new("dog_standing", filename_dog_standing, fw_standing, fh_standing)
-    animations["dog_jumping"] = Animation.new("dog_jumping", filename_dog_jumping, fw_jumping, fh_jumping)
-    animations["dog_running"] = Animation.new("dog_running", filename_dog_running, fw_running, fh_running)
-    animations["dog_hanging"] = Animation.new("dog_hanging", filename_dog_hanging, fw_hanging, fh_hanging)
-    animations["dog_space_jump"] = Animation.new("dog_space_jump", filename_dog_space_jump, fw_space_jump, fh_space_jump)
-    animations["dog_falling"] = Animation.new("dog_falling", filename_dog_falling, fw_falling, fh_falling)
+    animations["dog_standing"] = Animation.new("dog_standing", filename_dog_standing[1], fw_standing, fh_standing)
+    animations["dog_jumping"] = Animation.new("dog_jumping", filename_dog_jumping[1], fw_jumping, fh_jumping)
+    animations["dog_running"] = Animation.new("dog_running", filename_dog_running[1], fw_running, fh_running)
+    animations["dog_hanging"] = Animation.new("dog_hanging", filename_dog_hanging[1], fw_hanging, fh_hanging)
+    animations["dog_space_jump"] = Animation.new("dog_space_jump", filename_dog_space_jump[1], fw_space_jump, fh_space_jump)
+    animations["dog_falling"] = Animation.new("dog_falling", filename_dog_falling[1], fw_falling, fh_falling)
+
+    animations["dog_standing_blue"] = Animation.new("dog_standing_blue", filename_dog_standing[2], fw_standing, fh_standing)
+    animations["dog_jumping_blue"] = Animation.new("dog_jumping_blue", filename_dog_jumping[2], fw_jumping, fh_jumping)
+    animations["dog_running_blue"] = Animation.new("dog_running_blue", filename_dog_running[2], fw_running, fh_running)
+    animations["dog_hanging_blue"] = Animation.new("dog_hanging_blue", filename_dog_hanging[2], fw_hanging, fh_hanging)
+    animations["dog_falling_blue"] = Animation.new("dog_falling_blue", filename_dog_falling[2], fw_falling, fh_falling)
 
     for row = 1, 6 do
         animations["dog_standing"]:addFrame(row, 1)
+        animations["dog_standing_blue"]:addFrame(row, 1)
     end
     for row = 1, 4 do
         animations["dog_jumping"]:addFrame(row, 1)
+        animations["dog_jumping_blue"]:addFrame(row, 1)
     end
     for row = 1, 5 do
         animations["dog_running"]:addFrame(row, 1)
+        animations["dog_running_blue"]:addFrame(row, 1)
     end
     for row = 1, 2 do
         animations["dog_hanging"]:addFrame(row, 1)
+        animations["dog_hanging_blue"]:addFrame(row, 1)
     end
     for row = 1, 2 do
         animations["dog_space_jump"]:addFrame(row, 1)
     end
     for row = 1, 5 do
         animations["dog_falling"]:addFrame(row, 1)
+        animations["dog_falling_blue"]:addFrame(row, 1)
     end
 
     animations["dog_standing"]:play()
     animations["dog_jumping"]:play()
     animations["dog_running"]:play()
     animations["dog_hanging"]:play()
-    animations["dog_space_jump"]:play()
     animations["dog_falling"]:play()
+    animations["dog_standing_blue"]:play()
+    animations["dog_jumping_blue"]:play()
+    animations["dog_running_blue"]:play()
+    animations["dog_hanging_blue"]:play()
+    animations["dog_falling_blue"]:play()
+    animations["dog_space_jump"]:play()
 
     -- Objects
     objects.spawners = {}
@@ -276,8 +310,8 @@ function love.load()
         randoms[rnd] = math.random(1, 3)
     end
 
-    table.insert(objects.spawners, Spawner.new(animations["dog_running"], 1, 60, love.graphics.getHeight() - animations["dog_running"]:getHeight(), 1, 5))
-    table.insert(objects.spawners, Spawner.new(animations["dog_running"], 2, 140, love.graphics.getHeight() - 25, 10, 13))
+    table.insert(objects.spawners, Spawner.new(animations["dog_running_blue"], 1, 60, love.graphics.getHeight() - animations["dog_running"]:getHeight(), 1, 5))
+    table.insert(objects.spawners, Spawner.new(animations["dog_running_blue"], 2, 140, love.graphics.getHeight() - 25, 8, 13))
 
     pole = Pole.new(world, filename_pole, love.graphics.getWidth() - 100, love.graphics.getHeight() / 2)
     objects.pole = pole
@@ -292,11 +326,13 @@ function love.load()
 
     -- Buttons
     buttons.menu = {}
-    buttons.menu.play = {x = love.graphics.getWidth() / 2 - 50, y = love.graphics.getHeight() / 3,
+    buttons.menu.play = {img = love.graphics.newImage(filename_press_start),
+        x = love.graphics.getWidth() / 2, y = love.graphics.getHeight() / 3,
         onClick = function()
             state = CONSTANTS.PLAYING
         end}
-    buttons.menu.exit = {x = love.graphics.getWidth() / 2 - 50, y = love.graphics.getHeight() * 2 / 3,
+    buttons.menu.quit = {img = love.graphics.newImage(filename_quit),
+        x = love.graphics.getWidth() / 2, y = love.graphics.getHeight() * 2 / 3,
         onClick = function()
             love.event.quit(0)
         end}
@@ -327,6 +363,8 @@ function love.update(dt)
                 v:update(min_dt)
             end
         end
+
+        objects.pole:getBody():setMass(objects.pole:getBaseMass() - #hangings * 2)
 
         for k, v in pairs(hangings) do
             v.x = objects.pole:getBody():getX() - objects.pole:getImg():getWidth() / 2
@@ -380,8 +418,17 @@ function love.draw()
     if state == CONSTANTS.MENU then
         love.graphics.setColor({255, 255, 255})
         love.graphics.draw(background, 0, 0)
-        love.graphics.printf("PLAY", buttons.menu.play.x, buttons.menu.play.y, 50, "center")
-        love.graphics.printf("EXIT", buttons.menu.exit.x, buttons.menu.exit.y, 50, "center")
+        if buttons.menu.play.img then
+            love.graphics.draw(buttons.menu.play.img, buttons.menu.play.x, buttons.menu.play.y, 0, 1, 1, buttons.menu.play.img:getWidth() / 2, buttons.menu.play.img:getHeight() / 2)
+            --love.graphics.printf("PLAY", buttons.menu.play.x, buttons.menu.play.y, 50, "center")
+        else
+            love.graphics.printf("PLAY", buttons.menu.play.x, buttons.menu.play.y, 50, "center")
+        end
+        if buttons.menu.quit.img then
+            love.graphics.draw(buttons.menu.quit.img, buttons.menu.quit.x, buttons.menu.quit.y, 0, 1, 1, buttons.menu.quit.img:getWidth() / 2, buttons.menu.quit.img:getHeight() / 2)
+        else
+            love.graphics.printf("EXIT", buttons.menu.quit.x, buttons.menu.quit.y, 50, "center")
+        end
     elseif state == CONSTANTS.LOADING then
         love.graphics.setColor(logoColor)
         love.graphics.draw(logo, love.graphics.getWidth() / 2, love.graphics.getHeight() / 2, 0, 1, 1, logo:getWidth() / 2, logo:getHeight() / 2)
@@ -401,9 +448,9 @@ function love.draw()
                     love.graphics.setColor({255, 255, 255})
                     v:Draw(teamX - i * 8, teamY - randoms[i], randoms[i])
                 end
-            elseif k == "dog_hanging" then
+            elseif k == "dog_hanging_blue" then
                 for i = 1, #hangings do
-                    love.graphics.setColor({0, 100, 200})
+                    love.graphics.setColor({255, 255, 255})
                     v:Draw(hangings[i].x, hangings[i].y, nil, objects.pole:getBody():getAngle(), nil, nil, hangings[i].offset)
                 end
             end
@@ -434,24 +481,15 @@ end
 function love.mousepressed(x, y, button, isTouch)
     if state == CONSTANTS.MENU then
         for k, v in pairs(buttons.menu) do
-            if isClose(x, v.x + 5) and isClose (y, v.y + 5) then
-                v.onClick()
+            if v.img then
+                if isInRange(x, v.x, v.img:getWidth() / 2) and isInRange(y, v.y, v.img:getHeight() / 2) then
+                    v.onClick()
+                end
+            else
+                if isClose(x, v.x + 5) and isClose (y, v.y + 5) then
+                    v.onClick()
+                end
             end
         end
     end
 end
-
---[[function love.keypressed(key)
-    if key == "up" then
-        if canJump == true then
-            canJump = false
-            for k, v in ipairs(objects.creatures.team) do
-                v:getBody():applyForce(0, -20000)
-            end
-        end
-    elseif key == "k" then
-        local x, y = objects.pole:getBody():getPosition()
-        local team = Creature.new(world, animations["dog_standing"], "team", x - math.random(30, 60), teamY + animations["dog_standing"]:getHeight())
-        table.insert(objects.creatures.team, team)
-    end
-end]]--

@@ -51,7 +51,7 @@ function Enemy:update(dt)
     self.now = self.now + dt
 
     if self.fading then
-        self.color[4] = self.color[4] - dt * 250
+        self.color[4] = self.color[4] - dt * (self.body:getY() - love.graphics.getHeight() / 2)
     end
 
     self.animation:update(dt)

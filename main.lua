@@ -19,6 +19,8 @@ CONSTANTS = {
     PLAYING = 1000,
     GAME_OVER = 1001,
     MENU = 1002,
+    LOADING = 1005,
+    TIME_TO_LOAD = 2.5,
     ENEMY = 12,
     ENEMY_DEAD = -11,
     POLE = -10
@@ -31,6 +33,7 @@ local FRAMES = 60
 local canJump = true
 local isControlling = false
 local coolDown = 3
+local controlFade = 0
 local now = 3
 local state = 0
 local score = 0
@@ -204,10 +207,10 @@ function postSolve(a, b, coll, normalimpulse, tangentimpulse)
 end
 
 function love.load()
-    love.graphics.setBackgroundColor(104, 136, 248) --set the background color to a nice blue
+    love.graphics.setBackgroundColor(0, 0, 0) -- BURAKIRU
     love.window.setMode(600, 480)
 
-    local filename_dog_standing, filename_dog_jumping, filename_dog_running, filename_dog_hanging, filename_pole, filename_floor, filename_bg, filename_dog_space_jump, filename_dog_falling = "images/dog_standing.png", "images/dog_jumping.png", "images/dog_running.png", "images/dog_hanging.png", "images/pole.png", "images/floor.png", "images/bg.png", "images/dog_space_jump.png", "images/dog_falling.png"
+    local filename_dog_standing, filename_dog_jumping, filename_dog_running, filename_dog_hanging, filename_pole, filename_floor, filename_bg, filename_dog_space_jump, filename_dog_falling, filename_logo = "images/dog_standing.png", "images/dog_jumping.png", "images/dog_running.png", "images/dog_hanging.png", "images/pole.png", "images/floor.png", "images/bg.png", "images/dog_space_jump.png", "images/dog_falling.png", "images/logo.png"
     local fw_standing, fh_standing = 51, 55
     local fw_jumping, fh_jumping = 71, 60
     local fw_running, fh_running = 78, 40
@@ -215,9 +218,20 @@ function love.load()
     local fw_space_jump, fh_space_jump = 37, 33
     local fw_falling, fh_falling = 51, 47
 
+    -- Initialize menu/bgs
     background = love.graphics.newImage(filename_bg)
-    state = CONSTANTS.MENU
+    logo = love.graphics.newImage(filename_logo)
+    logoColor = {255, 255, 255, 0}
+    state = CONSTANTS.LOADING
 
+    min_dt = 1 / FRAMES
+    next_time = love.timer.getTime()
+
+    love.physics.setMeter(50)
+    world = love.physics.newWorld(0, 9.81 * 50, true)
+    world:setCallbacks(beginContact, endContact, preSolve, postSolve)
+
+    -- Creating animations
     animations["dog_standing"] = Animation.new("dog_standing", filename_dog_standing, fw_standing, fh_standing)
     animations["dog_jumping"] = Animation.new("dog_jumping", filename_dog_jumping, fw_jumping, fh_jumping)
     animations["dog_running"] = Animation.new("dog_running", filename_dog_running, fw_running, fh_running)
@@ -228,23 +242,18 @@ function love.load()
     for row = 1, 6 do
         animations["dog_standing"]:addFrame(row, 1)
     end
-
     for row = 1, 4 do
         animations["dog_jumping"]:addFrame(row, 1)
     end
-
     for row = 1, 5 do
         animations["dog_running"]:addFrame(row, 1)
     end
-
     for row = 1, 2 do
         animations["dog_hanging"]:addFrame(row, 1)
     end
-
     for row = 1, 2 do
         animations["dog_space_jump"]:addFrame(row, 1)
     end
-
     for row = 1, 5 do
         animations["dog_falling"]:addFrame(row, 1)
     end
@@ -256,13 +265,7 @@ function love.load()
     animations["dog_space_jump"]:play()
     animations["dog_falling"]:play()
 
-    min_dt = 1 / FRAMES
-    next_time = love.timer.getTime()
-
-    love.physics.setMeter(50)
-    world = love.physics.newWorld(0, 9.81 * 50, true)
-    world:setCallbacks(beginContact, endContact, preSolve, postSolve)
-
+    -- Objects
     objects.spawners = {}
     objects.scenary = {}
     objects.creatures = {}
@@ -287,6 +290,7 @@ function love.load()
     teamX = objects.pole:getPos() - objects.pole:getImg():getWidth() - 5
     teamY = love.graphics.getHeight() - 52
 
+    -- Buttons
     buttons.menu = {}
     buttons.menu.play = {x = love.graphics.getWidth() / 2 - 50, y = love.graphics.getHeight() / 3,
         onClick = function()
@@ -300,7 +304,12 @@ function love.load()
 end
 
 function love.update(dt)
-    if state == CONSTANTS.MENU then
+    if state == CONSTANTS.LOADING then
+        controlFade = controlFade + dt
+        logoColor[4] = logoColor[4] + (CONSTANTS.TIME_TO_LOAD - controlFade) * 3
+        if controlFade >= CONSTANTS.TIME_TO_LOAD * 2 then
+            state = CONSTANTS.MENU
+        end
     elseif state == CONSTANTS.PLAYING then
         next_time = next_time + min_dt
         now = now + min_dt
@@ -371,8 +380,11 @@ function love.draw()
     if state == CONSTANTS.MENU then
         love.graphics.setColor({255, 255, 255})
         love.graphics.draw(background, 0, 0)
-        love.graphics.print("PLAY", buttons.menu.play.x, buttons.menu.play.y)
-        love.graphics.print("EXIT", buttons.menu.exit.x, buttons.menu.exit.y)
+        love.graphics.printf("PLAY", buttons.menu.play.x, buttons.menu.play.y, 50, "center")
+        love.graphics.printf("EXIT", buttons.menu.exit.x, buttons.menu.exit.y, 50, "center")
+    elseif state == CONSTANTS.LOADING then
+        love.graphics.setColor(logoColor)
+        love.graphics.draw(logo, love.graphics.getWidth() / 2, love.graphics.getHeight() / 2, 0, 1, 1, logo:getWidth() / 2, logo:getHeight() / 2)
     elseif state == CONSTANTS.PLAYING then
         love.graphics.setColor({255, 255, 255})
         love.graphics.draw(background, 0, 0)

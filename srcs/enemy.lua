@@ -21,9 +21,13 @@ function Enemy.new(world, anim, type, x, y, orientation, angle, radius, width, h
     end
     instance.fixture = love.physics.newFixture(instance.body, instance.shape, 2)
     instance.fixture:setUserData("enemy" .. enemyCounter)
+    instance.fixture:setMask(CONSTANTS.ENEMY)
+    instance.fixture:setCategory(CONSTANTS.ENEMY)
+    instance.fixture:setGroupIndex(CONSTANTS.ENEMY_DEAD)
     enemyCounter = enemyCounter + 1
 
     instance.color = color or {math.random(0,255), math.random(0,255), math.random(0,255)}
+    instance.color[4] = 255
 
     instance.lastTime = 1.5
     instance.now = 0
@@ -34,18 +38,22 @@ function Enemy.new(world, anim, type, x, y, orientation, angle, radius, width, h
     instance.animation:play()
     instance.angle = angle or 0
     instance.orientation = orientation or {x = 1, y = -1}
+    instance.alive = true
 
     return instance
 end
 
 setmetatable(Enemy,{__index = Creature})
 
-function Enemy:destroy()
-    self:__gc()
-end
+function Enemy:hasAttacked() return self.attacked == true end
 
 function Enemy:update(dt)
     self.now = self.now + dt
+
+    if self.fading then
+        self.color[4] = self.color[4] - dt * 250
+    end
+
     self.animation:update(dt)
     local x, y = self.body:getLinearVelocity()
 

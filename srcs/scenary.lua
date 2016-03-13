@@ -25,10 +25,6 @@ function Scenary.new(world, mode, img, name, pos, width, height, color)
 
     instance.color = color or {math.random(0,255), math.random(0,255), math.random(0,255)}
 
-    print(instance.img)
-    print(instance.img and instance.img:getWidth())
-    print(instance.img and instance.img:getHeight())
-
     return instance
 end
 

@@ -23,6 +23,7 @@ function Creature.new(world, anim, name, x, y, orientation, angle, radius, width
     local instance = {}
     setmetatable(instance, Creature)
 
+    instance.animation = deepCopy(anim)
     instance.body = love.physics.newBody(world, x or 100, y or 100, "dynamic")
     if radius ~= nil and radius > 0 then
         instance.shape = love.physics.newCircleShape(radius)
@@ -33,11 +34,15 @@ function Creature.new(world, anim, name, x, y, orientation, angle, radius, width
     instance.fixture:setUserData((name .. creatureCounter) or ("creature" .. creatureCounter))
     creatureCounter = creatureCounter + 1
 
-    instance.color = color or (instance.img and {255, 255, 255}) or {math.random(0,255), math.random(0,255), math.random(0,255)}
-    instance.animation = deepCopy(anim)
+    instance.color = color or (instance.animation and {255, 255, 255}) or {math.random(0,255), math.random(0,255), math.random(0,255)}
+    instance.color[4] = 255
 
     instance.angle = angle or 0
     instance.orientation = orientation or {x = 1, y = 1}
+
+    instance.fading = false
+    instance.changeAnimation = false
+    instance.alive = true
 
     return instance
 end
@@ -68,6 +73,18 @@ function Creature:getColor() return self.color end
 
 function Creature:getAnimation() return self.animation end
 
+function Creature:prepareChange(change) self.changeAnimation = change end
+
+function Creature:newAnimation() return self.changeAnimation end
+
+function Creature:mustChange() return self.changeAnimation ~= nil and self.changeAnimation ~= false end
+
+function Creature:startFade() self.fading = true end
+
+function Creature:kill() self.alive = false end
+
+function Creature:isAlive() return self.alive == true end
+
 function Creature:setAnimation(anim)
     self.animation = anim
     self.width = (anim and anim:getWidth()) or self.width
@@ -80,6 +97,13 @@ end
 
 function Creature:update(dt)
     self.animation:update(dt)
+    if self.fading then
+        self.color[4] = self.color[4] - dt * 50
+    end
+end
+
+function Creature:destroy()
+    self:__gc()
 end
 
 function Creature:Draw()

@@ -240,7 +240,7 @@ function love.load()
     background = love.graphics.newImage(filename_bg)
     logo = love.graphics.newImage(filename_logo)
     logoColor = {255, 255, 255, 0}
-    state = CONSTANTS.LOADING
+    state = CONSTANTS.MENU
 
     min_dt = 1 / FRAMES
     next_time = love.timer.getTime()
@@ -327,12 +327,12 @@ function love.load()
     -- Buttons
     buttons.menu = {}
     buttons.menu.play = {img = love.graphics.newImage(filename_press_start),
-        x = love.graphics.getWidth() / 2, y = love.graphics.getHeight() / 3,
+        x = love.graphics.getWidth() / 2, y = love.graphics.getHeight() * 7 / 9,
         onClick = function()
             state = CONSTANTS.PLAYING
         end}
     buttons.menu.quit = {img = love.graphics.newImage(filename_quit),
-        x = love.graphics.getWidth() / 2, y = love.graphics.getHeight() * 2 / 3,
+        x = love.graphics.getWidth() / 2, y = love.graphics.getHeight() * 8 / 9,
         onClick = function()
             love.event.quit(0)
         end}
@@ -346,6 +346,9 @@ function love.update(dt)
         if controlFade >= CONSTANTS.TIME_TO_LOAD * 2 then
             state = CONSTANTS.MENU
         end
+    elseif state == CONSTANTS.MENU then
+        controlFade = controlFade + dt
+        logoColor[4] = logoColor[4] + controlFade * 2
     elseif state == CONSTANTS.PLAYING then
         next_time = next_time + min_dt
         now = now + min_dt
@@ -416,8 +419,10 @@ end
 
 function love.draw()
     if state == CONSTANTS.MENU then
-        love.graphics.setColor({255, 255, 255})
+        love.graphics.setColor({255, 255, 255, 255})
         love.graphics.draw(background, 0, 0)
+        love.graphics.setColor(logoColor)
+        love.graphics.draw(logo, love.graphics.getWidth() / 2, love.graphics.getHeight() * 2 / 9, 0, 1, 1, logo:getWidth() / 2, logo:getHeight() / 2)
         if buttons.menu.play.img then
             love.graphics.draw(buttons.menu.play.img, buttons.menu.play.x, buttons.menu.play.y, 0, 1, 1, buttons.menu.play.img:getWidth() / 2, buttons.menu.play.img:getHeight() / 2)
             --love.graphics.printf("PLAY", buttons.menu.play.x, buttons.menu.play.y, 50, "center")

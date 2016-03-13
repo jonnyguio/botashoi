@@ -26,6 +26,27 @@ CONSTANTS = {
 
 CONSTANTS = protect(CONSTANTS)
 
+
+local FRAMES = 60
+local canJump = true
+local isControlling = false
+local coolDown = 3
+local now = 3
+local state = 0
+local score = 0
+
+objects = {}
+imgs = {}
+animations = {}
+randoms = {}
+hangings = {}
+buttons = {}
+
+function isClose(a, b)
+    local c = 10
+    return (a + c >= b and a - c <= b) or (b + c >= a and b - c <= a)
+end
+
 function deepCopy(object)
     local lookup_table = {}
     local function _copy(object)
@@ -44,18 +65,9 @@ function deepCopy(object)
     return _copy(object)
 end
 
-local FRAMES = 60
-local canJump = true
-local isControlling = false
-local coolDown = 3
-local now = 3
-local state = 0
-
-objects = {}
-imgs = {}
-animations = {}
-randoms = {}
-hangings = {}
+function addScore(points)
+    score = score + points
+end
 
 function controlOne(now, coolDown, isControlling)
     --print (now, coolDown, isControlling)
@@ -122,6 +134,7 @@ function beginContact(a, b, coll)
                         v:getFixture():setCategory(CONSTANTS.ENEMY)
                         v:getFixture():setGroupIndex(CONSTANTS.ENEMY_DEAD)
                         v:prepareChange("dog_falling")
+                        addScore(1)
                         v:kill()
                     end
                 end
@@ -161,6 +174,7 @@ function beginContact(a, b, coll)
                         v:getFixture():setCategory(CONSTANTS.ENEMY)
                         v:getFixture():setGroupIndex(CONSTANTS.ENEMY_DEAD)
                         v:prepareChange("dog_falling")
+                        addScore(1)
                         v:kill()
                     end
                 end
@@ -173,7 +187,6 @@ function beginContact(a, b, coll)
             end
         end
     end
-
 end
 
 function endContact(a, b, coll)
@@ -203,7 +216,7 @@ function love.load()
     local fw_falling, fh_falling = 51, 47
 
     background = love.graphics.newImage(filename_bg)
-    state = CONSTANTS.PLAYING
+    state = CONSTANTS.MENU
 
     animations["dog_standing"] = Animation.new("dog_standing", filename_dog_standing, fw_standing, fh_standing)
     animations["dog_jumping"] = Animation.new("dog_jumping", filename_dog_jumping, fw_jumping, fh_jumping)
@@ -273,10 +286,22 @@ function love.load()
 
     teamX = objects.pole:getPos() - objects.pole:getImg():getWidth() - 5
     teamY = love.graphics.getHeight() - 52
+
+    buttons.menu = {}
+    buttons.menu.play = {x = love.graphics.getWidth() / 2 - 50, y = love.graphics.getHeight() / 3,
+        onClick = function()
+            state = CONSTANTS.PLAYING
+        end}
+    buttons.menu.exit = {x = love.graphics.getWidth() / 2 - 50, y = love.graphics.getHeight() * 2 / 3,
+        onClick = function()
+            love.event.quit(0)
+        end}
+
 end
 
 function love.update(dt)
-    if state == CONSTANTS.PLAYING then
+    if state == CONSTANTS.MENU then
+    elseif state == CONSTANTS.PLAYING then
         next_time = next_time + min_dt
         now = now + min_dt
 
@@ -310,6 +335,7 @@ function love.update(dt)
                 if v:mustChange() then
                     v:setAnimation(deepCopy(animations[v:newAnimation()]))
                     v:prepareChange(false)
+                    v:getBody():setMass(v:getBody():getMass() - 10)
                 end
             end
         end
@@ -342,7 +368,12 @@ function love.update(dt)
 end
 
 function love.draw()
-    if state == CONSTANTS.PLAYING then
+    if state == CONSTANTS.MENU then
+        love.graphics.setColor({255, 255, 255})
+        love.graphics.draw(background, 0, 0)
+        love.graphics.print("PLAY", buttons.menu.play.x, buttons.menu.play.y)
+        love.graphics.print("EXIT", buttons.menu.exit.x, buttons.menu.exit.y)
+    elseif state == CONSTANTS.PLAYING then
         love.graphics.setColor({255, 255, 255})
         love.graphics.draw(background, 0, 0)
 
@@ -384,10 +415,19 @@ function love.draw()
     elseif state == CONSTANTS.GAME_OVER then
         love.graphics.setColor({255, 255, 255})
         love.graphics.draw(background, 0, 0)
-        love.graphics.print("Perdeu, infelizmente. Continue tentando!", love.graphics.getWidth() / 2, love.graphics.getHeight() / 2)
+        love.graphics.printf("Perdeu :(\nPlacar: " .. score, love.graphics.getWidth() / 2 - 50, love.graphics.getHeight() / 2 -50, 100, "center")
     end
 end
 
+function love.mousepressed(x, y, button, isTouch)
+    if state == CONSTANTS.MENU then
+        for k, v in pairs(buttons.menu) do
+            if isClose(x, v.x + 5) and isClose (y, v.y + 5) then
+                v.onClick()
+            end
+        end
+    end
+end
 
 --[[function love.keypressed(key)
     if key == "up" then

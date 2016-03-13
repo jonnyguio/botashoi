@@ -98,7 +98,7 @@ end
 function Creature:update(dt)
     self.animation:update(dt)
     if self.fading then
-        self.color[4] = self.color[4] - dt * 50
+        self.color[4] = self.color[4] - dt * (self.body:getY() - love.graphics.getHeight() / 2)
     end
 end
 

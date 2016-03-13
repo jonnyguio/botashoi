@@ -17,7 +17,7 @@ function Pole.new(world, img, x, y, width, height, color)
 
     instance.body = love.physics.newBody(world, (x or love.graphics.getWidth() / 2), (y or love.graphics.getHeight() / 2), "dynamic")
     instance.shape = love.physics.newRectangleShape((instance.img and instance.img:getWidth()) or width or 20, (instance.img and instance.img:getHeight()) or height or 300)
-    instance.fixture = love.physics.newFixture(instance.body, instance.shape, 40)
+    instance.fixture = love.physics.newFixture(instance.body, instance.shape, 45)
     instance.fixture:setUserData("pole")
     --instance.pos = pos or {x = love.graphics.getWidth() / 2, y = love.graphics.getHeight() / 2}
 
